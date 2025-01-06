@@ -1,4 +1,6 @@
 package com.united.poc.lambda.ExposerLogTestAPI;
 
-public class LogAnalyzerHandler {
+import org.springframework.cloud.function.adapter.aws.FunctionInvoker;
+
+public class LogAnalyzerHandler extends FunctionInvoker {
 }
