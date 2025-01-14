@@ -16,11 +16,14 @@ public class ExposerLogTestApiApplication {
 	@Bean
 	public Function<String, String> logAnalyzer() {
 		return logEntry -> {
-			// log tracker
-			if (logEntry.contains("ERROR")) {
-				return "Critical Error Detected: " + logEntry;
+			if (logEntry.contains("CRITICAL")) {
+				return "CRITICAL Error Detected: " + logEntry;
+			} else if (logEntry.contains("ERROR")) {
+				return "Error Detected: " + logEntry;
+			} else if (logEntry.contains("WARNING")) {
+				return "Warning Detected: " + logEntry;
 			}
-			return "Log processed: " + logEntry;
+			return "Log processed successfully: " + logEntry;
 		};
 	}
 }
