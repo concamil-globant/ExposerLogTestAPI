@@ -12,35 +12,41 @@ import java.util.function.Function;
 @SpringBootApplication
 public class ExposerLogTestApiApplication {
 
-	private final ComprehendClient comprehendClient = ComprehendClient.create();
+    private final ComprehendClient comprehendClient = ComprehendClient.create();
 
-	public static void main(String[] args) {
-		SpringApplication.run(ExposerLogTestApiApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(ExposerLogTestApiApplication.class, args);
+    }
 
-	@Bean
-	public Function<String, String> logAnalyzer() {
-		return logEntry -> {
-			DetectSentimentRequest request = DetectSentimentRequest.builder()
-					.text(logEntry)
-					.languageCode("en")
-					.build();
+    @Bean
+    public Function<String, String> logAnalyzer() {
+        return logEntry -> {
+            String processedLog = logEntry.split("\n")[0]; // take the first line
+            boolean isStacktrace = logEntry.contains("Exception") || logEntry.contains("at");
 
-			DetectSentimentResponse response = comprehendClient.detectSentiment(request);
-			String sentiment = response.sentimentAsString();
+            DetectSentimentRequest request = DetectSentimentRequest.builder()
+                    .text(processedLog)  // analyze error message
+                    .languageCode("en")
+                    .build();
 
-			// explicit aws Comprehend log
-			System.out.println("Comprehend Sentiment Detected: " + sentiment);
+            DetectSentimentResponse response = comprehendClient.detectSentiment(request);
+            String sentiment = response.sentimentAsString();
 
-			if (logEntry.contains("CRITICAL")) {
-				return "CRITICAL Error Detected [" + sentiment + "]: " + logEntry;
-			} else if (logEntry.contains("ERROR")) {
-				return "Error Detected [" + sentiment + "]: " + logEntry;
-			} else if (logEntry.contains("WARNING")) {
-				return "Warning Detected [" + sentiment + "]: " + logEntry;
-			}
-			return "Log processed successfully [" + sentiment + "]: " + logEntry;
-		};
-	}
+            if (isStacktrace) {
+                System.out.println("INFO: Stacktrace detected, sentiment may not be accurate.");
+            }
+
+            System.out.println("Log Level Detected: " +
+                    (logEntry.contains("CRITICAL") ? "CRITICAL" :
+                            logEntry.contains("ERROR") ? "ERROR" :
+                                    logEntry.contains("WARNING") ? "WARNING" :
+                                            "INFO") +
+                    " | Sentiment: " + sentiment +
+                    " | Message: " + processedLog
+            );
+
+            return "Sentiment: " + sentiment + " | Log Processed: " + processedLog;
+        };
+    }
 
 }
